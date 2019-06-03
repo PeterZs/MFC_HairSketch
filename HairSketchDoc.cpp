@@ -30,11 +30,22 @@ END_MESSAGE_MAP()
 CHairSketchDoc::CHairSketchDoc() noexcept
 {
 	// TODO: 여기에 일회성 생성 코드를 추가합니다.
-
+	m_InImg = NULL;
+	m_OutImg = NULL;
+	m_flag = NULL;
+	for (int i = 0; i < 256; i++)
+	{
+		palRGB[i].rgbBlue = palRGB[i].rgbGreen = palRGB[i].rgbRed = i;
+		palRGB[i].rgbReserved = 0;
+	}
+	set_rv = 0; set_gv = 0; set_bv = 0;
 }
 
 CHairSketchDoc::~CHairSketchDoc()
 {
+	if (m_InImg) delete[]m_InImg;
+	if (m_OutImg) delete[]m_OutImg;
+	if (m_flag) delete[]m_flag;
 }
 
 BOOL CHairSketchDoc::OnNewDocument()
@@ -135,3 +146,76 @@ void CHairSketchDoc::Dump(CDumpContext& dc) const
 
 
 // CHairSketchDoc 명령
+
+
+BOOL CHairSketchDoc::OnOpenDocument(LPCTSTR lpszPathName)
+{
+	if (!CDocument::OnOpenDocument(lpszPathName))
+		return FALSE;
+
+	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
+	CImage Image;
+	HRESULT hResult = Image.Load(lpszPathName);
+	Image.Save(TEXT("test.bmp"), Gdiplus::ImageFormatBMP);
+
+	CFile hFile;
+	hFile.Open(TEXT("test.bmp"), (CFile::modeRead) | (CFile::typeBinary));
+	hFile.Read(&dibHf, sizeof(BITMAPFILEHEADER));
+
+	// 0x4d42=="BM"
+	if (dibHf.bfType != 0x4d42)
+	{
+		AfxMessageBox(_T("Not BMP File!!"));
+		return FALSE;
+	}
+	hFile.Read(&dibHi, sizeof(BITMAPINFOHEADER));
+	if ((dibHi.biBitCount != 8) && (dibHi.biBitCount != 24))
+	{
+		AfxMessageBox(_T("Gray/True Color Possible!!"));
+		return FALSE;
+	}
+	if (dibHi.biBitCount == 8)
+	{
+		hFile.Read(palRGB, sizeof(RGBQUAD) * 256);
+	}
+
+	//int ImgSize;
+	if (dibHi.biBitCount == 8)
+		ImgSize = (int)hFile.GetLength() - sizeof(BITMAPFILEHEADER) - sizeof(BITMAPINFOHEADER) - 256 * sizeof(RGBQUAD);
+	else if (dibHi.biBitCount == 24)
+		ImgSize = (int)hFile.GetLength() - sizeof(BITMAPFILEHEADER) - sizeof(BITMAPINFOHEADER);
+	m_InImg = new unsigned char[ImgSize];
+	m_OutImg = new unsigned char[ImgSize];
+	m_flag = new unsigned char[ImgSize];
+	hFile.Read(m_InImg, ImgSize);
+	hFile.Close();
+	height = dibHi.biHeight;
+	width = dibHi.biWidth;
+
+	if (dibHi.biBitCount == 24) return TRUE;
+
+	// Gray
+	int i, j, index;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	for (i = 0; i < height; i++)
+	{
+		index = i * rwsize;
+		for (j = 0; j < width; j++)
+			m_InImg[index + j] = (unsigned char)palRGB[(int)m_InImg[index + j]].rgbBlue;
+	}
+	return TRUE;
+}
+
+
+BOOL CHairSketchDoc::OnSaveDocument(LPCTSTR lpszPathName)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	CFile hFile;
+	if (!hFile.Open(lpszPathName, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary)) return FALSE;
+	hFile.Write(&dibHf, sizeof(BITMAPFILEHEADER));
+	hFile.Write(&dibHi, sizeof(BITMAPINFOHEADER));
+	if (dibHi.biBitCount == 8) hFile.Write(palRGB, sizeof(RGBQUAD) * 256);
+	hFile.Write(m_InImg, dibHi.biSizeImage);
+	hFile.Close();
+	return CDocument::OnSaveDocument(lpszPathName);
+}

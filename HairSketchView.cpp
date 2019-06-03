@@ -29,11 +29,18 @@ END_MESSAGE_MAP()
 CHairSketchView::CHairSketchView() noexcept
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
-
+	BmInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
+	for (int i = 0; i < 256; i++)
+	{
+		BmInfo->bmiColors[i].rgbRed = BmInfo->bmiColors[i].rgbGreen = BmInfo->bmiColors[i].rgbBlue = i;
+		BmInfo->bmiColors[i].rgbReserved = 0;
+	}
+	x = 0; y = 0; r = 0; g = 0; b = 0;
 }
 
 CHairSketchView::~CHairSketchView()
 {
+	if (BmInfo) delete BmInfo;
 }
 
 BOOL CHairSketchView::PreCreateWindow(CREATESTRUCT& cs)
@@ -46,7 +53,7 @@ BOOL CHairSketchView::PreCreateWindow(CREATESTRUCT& cs)
 
 // CHairSketchView 그리기
 
-void CHairSketchView::OnDraw(CDC* /*pDC*/)
+void CHairSketchView::OnDraw(CDC* pDC)
 {
 	CHairSketchDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
@@ -54,6 +61,12 @@ void CHairSketchView::OnDraw(CDC* /*pDC*/)
 		return;
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
+	height = pDoc->dibHi.biHeight;
+	width = pDoc->dibHi.biWidth;
+	rwsize = WIDTHBYTES(pDoc->dibHi.biBitCount*pDoc->dibHi.biWidth);
+	BmInfo->bmiHeader = pDoc->dibHi;
+
+	SetDIBitsToDevice(pDC->GetSafeHdc(), 0, 0, width, height, 0, 0, 0, height, pDoc->m_InImg, BmInfo, DIB_RGB_COLORS);
 }
 
 void CHairSketchView::OnInitialUpdate()
@@ -62,7 +75,10 @@ void CHairSketchView::OnInitialUpdate()
 
 	CSize sizeTotal;
 	// TODO: 이 뷰의 전체 크기를 계산합니다.
-	sizeTotal.cx = sizeTotal.cy = 100;
+	CHairSketchDoc* pDoc = GetDocument();
+	ASSERT_VALID(pDoc);
+	sizeTotal.cx = pDoc->width;
+	sizeTotal.cy = pDoc->height;
 	SetScrollSizes(MM_TEXT, sizeTotal);
 }
 

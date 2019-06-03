@@ -4,7 +4,7 @@
 
 
 #pragma once
-
+#define WIDTHBYTES(bits)	(((bits)+31)/32*4)
 
 class CHairSketchDoc : public CDocument
 {
@@ -17,6 +17,31 @@ public:
 
 // 작업입니다.
 public:
+	BITMAPFILEHEADER dibHf;
+	BITMAPINFOHEADER dibHi;
+	RGBQUAD palRGB[256];
+	unsigned char *m_InImg;
+	unsigned char *m_OutImg;
+	int height;
+	int width;
+	int ImgSize;
+	unsigned char *m_flag;
+	int stk[16777216];
+	int sp;
+	int set_rv, set_gv, set_bv, set_x, set_y;
+
+	int get_Rvalue(int x, int y);
+	int get_Gvalue(int x, int y);
+	int get_Bvalue(int x, int y);
+	int abs(int op);
+	void set_R(int rvalue);
+	void set_G(int gvalue);
+	void set_B(int bvalue);
+	void set_xy(int xp, int yp);
+	void FloodFill(int x, int y, int nFillColor, int nSelColor);
+	void set_sp(int n);
+	int push(int n);
+	int pop();
 
 // 재정의입니다.
 public:
@@ -45,4 +70,7 @@ protected:
 	// 검색 처리기에 대한 검색 콘텐츠를 설정하는 도우미 함수
 	void SetSearchContent(const CString& value);
 #endif // SHARED_HANDLERS
+public:
+	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
+	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 };

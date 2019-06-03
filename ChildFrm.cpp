@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "HairSketch.h"
+#include "HairSketchDoc.h"
 
 #include "ChildFrm.h"
 
@@ -54,3 +55,23 @@ void CChildFrame::Dump(CDumpContext& dc) const
 #endif //_DEBUG
 
 // CChildFrame 메시지 처리기
+
+
+void CChildFrame::ActivateFrame(int nCmdShow)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	CRect rect_1;
+	CRect rect_2;
+	CSize size;
+
+	GetWindowRect(&rect_1);
+	GetClientRect(&rect_2);
+
+	size.cx = ((CHairSketchDoc *)GetActiveDocument())->width;
+	size.cy = ((CHairSketchDoc *)GetActiveDocument())->height;
+	int x = size.cx + rect_1.Width() - rect_2.Width() + 4;
+	int y = size.cy + rect_1.Height() - rect_2.Height() + 4;
+	SetWindowPos(NULL, 0, 0, x, y, SWP_NOMOVE | SWP_SHOWWINDOW);
+
+	CMDIChildWnd::ActivateFrame(nCmdShow);
+}

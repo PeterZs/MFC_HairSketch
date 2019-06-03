@@ -17,6 +17,11 @@ public:
 
 // 작업입니다.
 public:
+	BITMAPINFO *BmInfo;
+	int height;
+	int width;
+	int rwsize;
+	int x, y, r, g, b;
 
 // 재정의입니다.
 public:
