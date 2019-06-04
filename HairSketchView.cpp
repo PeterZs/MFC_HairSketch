@@ -34,6 +34,13 @@ ON_COMMAND(ID_COLOR_BRIGHTGRAY, &CHairSketchView::OnColorBrightgray)
 ON_COMMAND(ID_EDIT_COPY, &CHairSketchView::OnEditCopy)
 ON_COMMAND(ID_EDIT_PASTE, &CHairSketchView::OnEditPaste)
 ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, &CHairSketchView::OnUpdateEditPaste)
+ON_COMMAND(ID_COLOR_BLUE, &CHairSketchView::OnColorBlue)
+ON_COMMAND(ID_COLOR_SKY, &CHairSketchView::OnColorSky)
+ON_COMMAND(ID_COLOR_BLUEGREEN, &CHairSketchView::OnColorBluegreen)
+ON_COMMAND(ID_COLORJAJURED, &CHairSketchView::OnColorjajured)
+ON_COMMAND(ID_COLOR_BORARED, &CHairSketchView::OnColorBorared)
+ON_COMMAND(ID_COLOR_RED, &CHairSketchView::OnColorRed)
+ON_COMMAND(ID_COLOR_BRIGHTRED, &CHairSketchView::OnColorBrightred)
 END_MESSAGE_MAP()
 
 // CHairSketchView 생성/소멸
@@ -218,6 +225,83 @@ void CHairSketchView::OnColorBrightgray()
 	CHairSketchDoc* doc = GetDocument();
 	doc->quick = true;
 	doc->quickColor = RGB(80, 80, 80);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBlue()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(0, 0, 64);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorSky()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(0, 53, 106);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBluegreen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(32, 64, 64);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorjajured()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(53, 0, 27);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBorared()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(70, 0, 35);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorRed()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(60, 0, 0);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBrightred()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(80, 0, 0);
 	OnDyeingColor();
 	doc->quick = false;
 }

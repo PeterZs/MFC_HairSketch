@@ -26,7 +26,7 @@ public:
 	int width;
 	int ImgSize;
 	unsigned char *m_flag;
-	int stk[10000000];
+	int stk[15000000];
 	int sp;
 	int set_rv, set_gv, set_bv, set_x, set_y;
 

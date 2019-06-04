@@ -184,10 +184,10 @@ BOOL CHairSketchDoc::OnOpenDocument(LPCTSTR lpszPathName)
 	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
 	CImage Image;
 	HRESULT hResult = Image.Load(lpszPathName);
-	Image.Save(TEXT("test.bmp"), Gdiplus::ImageFormatBMP);
+	Image.Save(TEXT("original.bmp"), Gdiplus::ImageFormatBMP);
 
 	CFile hFile;
-	hFile.Open(TEXT("test.bmp"), (CFile::modeRead) | (CFile::typeBinary));
+	hFile.Open(TEXT("original.bmp"), (CFile::modeRead) | (CFile::typeBinary));
 	hFile.Read(&dibHf, sizeof(BITMAPFILEHEADER));
 
 	// 0x4d42=="BM"
@@ -456,14 +456,13 @@ void CHairSketchDoc::sketchArea(int x, int y, int nFillColor, int nSelColor)
 {
 	int rwsize = WIDTHBYTES(dibHi.biBitCount*width), index;
 	index = y * rwsize;
-	if (nSelColor < 0) // 최초 Call
+	if (nSelColor < 0)
 		nSelColor = m_flag[index + x * 3];
-	if (m_flag[index + x * 3] != nSelColor) // 다른색이면 리턴
+	if (m_flag[index + x * 3] != nSelColor)
 		return;
-	else //칠할 색일 경우
+	else
 	{
-		m_flag[index + x * 3] = nFillColor; //점 찍기
-		//재귀호출 4개
+		m_flag[index + x * 3] = nFillColor;
 		sketchArea(x - 1, y, nFillColor, nSelColor);
 		sketchArea(x + 1, y, nFillColor, nSelColor);
 		sketchArea(x, y - 1, nFillColor, nSelColor);

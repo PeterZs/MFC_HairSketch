@@ -53,13 +53,21 @@ public:
 	afx_msg void OnColorDarkgray();
 	afx_msg void OnColorGray();
 	afx_msg void OnColorBrightgray();
+	afx_msg void OnColorBlue();
+	afx_msg void OnColorSky();
+	afx_msg void OnColorBluegreen();
+	afx_msg void OnColorjajured();
+	afx_msg void OnColorBorared();
+	afx_msg void OnColorRed();
+	afx_msg void OnColorBrightred();
+
 	afx_msg void OnEditCopy();
 	afx_msg void OnEditPaste();
 	afx_msg void OnUpdateEditPaste(CCmdUI *pCmdUI);
+	
 };
 
 #ifndef _DEBUG  // HairSketchView.cpp의 디버그 버전
 inline CHairSketchDoc* CHairSketchView::GetDocument() const
    { return reinterpret_cast<CHairSketchDoc*>(m_pDocument); }
 #endif
-
