@@ -17,11 +17,10 @@ public:
 
 // 작업입니다.
 public:
-	BITMAPINFO *BmInfo;
-	int height;
-	int width;
-	int rwsize;
-	int x, y, r, g, b;
+	int x, y;
+	int r, g, b;
+	int height, width, resize;
+	BITMAPINFO *bmpInfo;
 
 // 재정의입니다.
 public:
@@ -43,6 +42,20 @@ protected:
 // 생성된 메시지 맵 함수
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnDyeingColor();
+
+	afx_msg void OnColorBlack();
+	afx_msg void OnColorDarkbrown();
+	afx_msg void OnColorBrown();
+	afx_msg void OnColorBrightbrown();
+	afx_msg void OnColorDarkgray();
+	afx_msg void OnColorGray();
+	afx_msg void OnColorBrightgray();
+	afx_msg void OnEditCopy();
+	afx_msg void OnEditPaste();
+	afx_msg void OnUpdateEditPaste(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // HairSketchView.cpp의 디버그 버전

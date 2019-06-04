@@ -22,6 +22,7 @@
 IMPLEMENT_DYNCREATE(CHairSketchDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CHairSketchDoc, CDocument)
+	ON_COMMAND(ID_DYEING_COLOR, &CHairSketchDoc::OnDyeingColor)
 END_MESSAGE_MAP()
 
 
@@ -55,7 +56,34 @@ BOOL CHairSketchDoc::OnNewDocument()
 
 	// TODO: 여기에 재초기화 코드를 추가합니다.
 	// SDI 문서는 이 문서를 다시 사용합니다.
+	::OpenClipboard(NULL);
+	if (!IsClipboardFormatAvailable(CF_DIB)) return FALSE;
+	HGLOBAL m_hImage = ::GetClipboardData(CF_DIB);
+	::CloseClipboard();
 
+	LPSTR pDIB = (LPSTR) ::GlobalLock((HGLOBAL)m_hImage);
+
+	memcpy(&dibHi, pDIB, sizeof(BITMAPINFOHEADER));
+	height = dibHi.biHeight;
+	width = dibHi.biWidth;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	DWORD dwBitsSize = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256 + rwsize * height * sizeof(char);
+	m_InImg = new unsigned char[dibHi.biSizeImage];
+	m_OutImg = new unsigned char[dibHi.biSizeImage];
+	m_flag = new unsigned char[dibHi.biSizeImage];
+
+	if (dibHi.biBitCount == 8)
+	{
+		memcpy(palRGB, pDIB + sizeof(BITMAPINFOHEADER), sizeof(RGBQUAD) * 256);
+		memcpy(m_InImg, pDIB + dwBitsSize - dibHi.biSizeImage, dibHi.biSizeImage);
+	}
+	else memcpy(m_InImg, pDIB + sizeof(BITMAPINFOHEADER), dibHi.biSizeImage);
+
+	dibHf.bfType = 0x4d42;
+	dibHf.bfSize = dwBitsSize + sizeof(BITMAPFILEHEADER);
+	if (dibHi.biBitCount == 24) dibHf.bfSize -= sizeof(RGBQUAD) * 256;
+	dibHf.bfOffBits = dibHf.bfSize - rwsize * height * sizeof(char);
+	dibHf.bfReserved1 = dibHf.bfReserved2 = 0;
 	return TRUE;
 }
 
@@ -218,4 +246,259 @@ BOOL CHairSketchDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	hFile.Write(m_InImg, dibHi.biSizeImage);
 	hFile.Close();
 	return CDocument::OnSaveDocument(lpszPathName);
+}
+
+
+int CHairSketchDoc::getClickedR(int x, int y)
+{
+	int j = x, i = height - y;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	int index = i * rwsize;
+	return (int)m_InImg[index + j * 3 + 2];
+}
+int CHairSketchDoc::getClickedG(int x, int y)
+{
+	int j = x, i = height - y;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	int index = i * rwsize;
+	return (int)m_InImg[index + j * 3 + 1];
+}
+int CHairSketchDoc::getClickedB(int x, int y)
+{
+	int j = x, i = height - y;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	int index = i * rwsize;
+	return (int)m_InImg[index + j * 3 + 0];
+}
+int CHairSketchDoc::getABS(int num)
+{
+	int ret;
+	if (num >= 0)
+		ret = num;
+	else
+		ret = -num;
+	return ret;
+}
+void CHairSketchDoc::setR(int rvalue)
+{
+	set_rv = rvalue;
+}
+void CHairSketchDoc::setG(int gvalue)
+{
+	set_gv = gvalue;
+}
+void CHairSketchDoc::setB(int bvalue)
+{
+	set_bv = bvalue;
+}
+void CHairSketchDoc::setXY(int xp, int yp)
+{ 
+	set_x = xp; set_y = height - yp;
+}
+void CHairSketchDoc::setSP(int n) 
+{ 
+	sp = n; 
+}
+
+void CHairSketchDoc::OnDyeingColor()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	int temp = 0, max = 255, min = 0, count = 1, comp_avg, comp_r, comp_g, comp_b;
+	int Vin_R, Vin_G, Vin_B, In_avg, t_avg, average, i, j, index;
+	int avg_B = 0, avg_G = 0, avg_R = 0, V_R, V_G, V_B;
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width);
+	setSP(0);
+	comp_avg = (set_rv + set_gv + set_bv) / 3;
+	comp_r = set_rv - comp_avg;
+	comp_g = set_gv - comp_avg;
+	comp_b = set_bv - comp_avg;
+
+	if (quick == false) {
+		CColorDialog dlg(RGB(0, 0, 0), CC_FULLOPEN);
+		if (dlg.DoModal() == IDOK)
+		{
+			COLORREF color = dlg.GetColor();
+
+			for (i = 0; i < height; i++) {
+				index = i * rwsize;
+				for (j = 0; j < width; j++) {
+					In_avg = ((int)m_InImg[index + j * 3 + 0] + (int)m_InImg[index + j * 3 + 1] + (int)m_InImg[index + j * 3 + 2]) / 3;
+					Vin_R = (int)m_InImg[index + j * 3 + 2] - In_avg;
+					Vin_G = (int)m_InImg[index + j * 3 + 1] - In_avg;
+					Vin_B = (int)m_InImg[index + j * 3 + 0] - In_avg;
+					if (abs(Vin_R - comp_r) <= 12
+						&& abs(Vin_G - comp_g) <= 12
+						&& abs(Vin_B - comp_b) <= 12
+						&& abs(In_avg - comp_avg) <= 100)
+					{
+						m_flag[index + j * 3] = 1;
+						count++;
+						temp += In_avg;
+					}
+					else
+					{
+						m_flag[index + j * 3] = 0;
+					}
+				}
+			}
+
+			sketchArea(set_x, set_y, 2, 1);
+
+			average = temp / count;
+			t_avg = (GetRValue(color) + GetGValue(color) + GetBValue(color)) / 3;
+			V_R = GetRValue(color) - t_avg;
+			V_G = GetGValue(color) - t_avg;
+			V_B = GetBValue(color) - t_avg;
+
+			for (i = 0; i < height; i++) {
+				index = i * rwsize;
+				for (j = 0; j < width; j++) {
+					In_avg = ((int)m_InImg[index + j * 3 + 0] + (int)m_InImg[index + j * 3 + 1] + (int)m_InImg[index + j * 3 + 2]) / 3;
+
+					if (m_flag[index + j * 3] == 2) {
+						//B
+						temp = t_avg + (In_avg - average) + V_B;
+						if (temp > 255) m_OutImg[index + j * 3 + 0] = (unsigned char)max;
+						else if (temp < 0)	m_OutImg[index + j * 3 + 0] = (unsigned char)min;
+						else m_OutImg[index + j * 3 + 0] = (unsigned char)temp;
+
+						//G
+						temp = t_avg + (In_avg - average) + V_G;
+						if (temp > 255) m_OutImg[index + j * 3 + 1] = (unsigned char)max;
+						else if (temp < 0)	m_OutImg[index + j * 3 + 1] = (unsigned char)min;
+						else m_OutImg[index + j * 3 + 1] = (unsigned char)temp;
+
+						//R
+						temp = t_avg + (In_avg - average) + V_R;
+						if (temp > 255) m_OutImg[index + j * 3 + 2] = (unsigned char)max;
+						else if (temp < 0)	m_OutImg[index + j * 3 + 2] = (unsigned char)min;
+						else m_OutImg[index + j * 3 + 2] = (unsigned char)temp;
+					}
+					else
+					{
+						m_OutImg[index + j * 3 + 0] = m_InImg[index + j * 3 + 0];
+						m_OutImg[index + j * 3 + 1] = m_InImg[index + j * 3 + 1];
+						m_OutImg[index + j * 3 + 2] = m_InImg[index + j * 3 + 2];
+					}
+				}
+			}
+		}
+	}
+	else {
+
+		for (i = 0; i < height; i++) {
+			index = i * rwsize;
+			for (j = 0; j < width; j++) {
+				In_avg = ((int)m_InImg[index + j * 3 + 0] + (int)m_InImg[index + j * 3 + 1] + (int)m_InImg[index + j * 3 + 2]) / 3;
+				Vin_R = (int)m_InImg[index + j * 3 + 2] - In_avg;
+				Vin_G = (int)m_InImg[index + j * 3 + 1] - In_avg;
+				Vin_B = (int)m_InImg[index + j * 3 + 0] - In_avg;
+				if (abs(Vin_R - comp_r) <= 12
+					&& abs(Vin_G - comp_g) <= 12
+					&& abs(Vin_B - comp_b) <= 12
+					&& abs(In_avg - comp_avg) <= 100)
+				{
+					m_flag[index + j * 3] = 1;
+					count++;
+					temp += In_avg;
+				}
+				else
+				{
+					m_flag[index + j * 3] = 0;
+				}
+			}
+		}
+
+		sketchArea(set_x, set_y, 2, 1);
+
+		average = temp / count;
+		t_avg = (GetRValue(quickColor) + GetGValue(quickColor) + GetBValue(quickColor)) / 3;
+		V_R = GetRValue(quickColor) - t_avg;
+		V_G = GetGValue(quickColor) - t_avg;
+		V_B = GetBValue(quickColor) - t_avg;
+
+		for (i = 0; i < height; i++) {
+			index = i * rwsize;
+			for (j = 0; j < width; j++) {
+				In_avg = ((int)m_InImg[index + j * 3 + 0] + (int)m_InImg[index + j * 3 + 1] + (int)m_InImg[index + j * 3 + 2]) / 3;
+
+				if (m_flag[index + j * 3] == 2) {
+					//B
+					temp = t_avg + (In_avg - average) + V_B;
+					if (temp > 255) m_OutImg[index + j * 3 + 0] = (unsigned char)max;
+					else if (temp < 0)	m_OutImg[index + j * 3 + 0] = (unsigned char)min;
+					else m_OutImg[index + j * 3 + 0] = (unsigned char)temp;
+
+					//G
+					temp = t_avg + (In_avg - average) + V_G;
+					if (temp > 255) m_OutImg[index + j * 3 + 1] = (unsigned char)max;
+					else if (temp < 0)	m_OutImg[index + j * 3 + 1] = (unsigned char)min;
+					else m_OutImg[index + j * 3 + 1] = (unsigned char)temp;
+
+					//R
+					temp = t_avg + (In_avg - average) + V_R;
+					if (temp > 255) m_OutImg[index + j * 3 + 2] = (unsigned char)max;
+					else if (temp < 0)	m_OutImg[index + j * 3 + 2] = (unsigned char)min;
+					else m_OutImg[index + j * 3 + 2] = (unsigned char)temp;
+				}
+				else
+				{
+					m_OutImg[index + j * 3 + 0] = m_InImg[index + j * 3 + 0];
+					m_OutImg[index + j * 3 + 1] = m_InImg[index + j * 3 + 1];
+					m_OutImg[index + j * 3 + 2] = m_InImg[index + j * 3 + 2];
+				}
+			}
+		}
+	}
+}
+
+void CHairSketchDoc::sketchArea(int x, int y, int nFillColor, int nSelColor)
+{
+	int rwsize = WIDTHBYTES(dibHi.biBitCount*width), index;
+	index = y * rwsize;
+	if (nSelColor < 0) // 최초 Call
+		nSelColor = m_flag[index + x * 3];
+	if (m_flag[index + x * 3] != nSelColor) // 다른색이면 리턴
+		return;
+	else //칠할 색일 경우
+	{
+		m_flag[index + x * 3] = nFillColor; //점 찍기
+		//재귀호출 4개
+		sketchArea(x - 1, y, nFillColor, nSelColor);
+		sketchArea(x + 1, y, nFillColor, nSelColor);
+		sketchArea(x, y - 1, nFillColor, nSelColor);
+		sketchArea(x, y + 1, nFillColor, nSelColor);
+	}
+}
+
+void CHairSketchDoc::CopyClipboard(unsigned char *m_CpyImg, int height, int width, int biBitCount)
+{
+	int rwsize = WIDTHBYTES(biBitCount*width);
+	DWORD dwBitsSize = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256 + rwsize * height * sizeof(char);
+
+	HGLOBAL m_hImage = (HGLOBAL)::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, dwBitsSize);
+	LPSTR pDIB = (LPSTR)::GlobalLock((HGLOBAL)m_hImage);
+
+	BITMAPINFOHEADER dibCpyHi;
+	memcpy(&dibCpyHi, &dibHi, sizeof(BITMAPINFOHEADER));
+	dibCpyHi.biBitCount = biBitCount;
+	dibCpyHi.biHeight = height;
+	dibCpyHi.biWidth = width;
+	dibCpyHi.biSizeImage = height * rwsize;
+	if (biBitCount == 8) dibCpyHi.biClrUsed = dibCpyHi.biClrImportant = 256;
+
+	memcpy(pDIB, &dibCpyHi, sizeof(BITMAPINFOHEADER));
+	if (biBitCount == 8)
+	{
+		memcpy(pDIB + sizeof(BITMAPINFOHEADER), palRGB, sizeof(RGBQUAD) * 256);
+		memcpy(pDIB + dwBitsSize - dibCpyHi.biSizeImage, m_CpyImg, dibCpyHi.biSizeImage);
+	}
+	else memcpy(pDIB + sizeof(BITMAPINFOHEADER), m_CpyImg, dibCpyHi.biSizeImage);
+
+	::OpenClipboard(NULL);
+	::SetClipboardData(CF_DIB, m_hImage);
+	::CloseClipboard();
+
+	::GlobalUnlock((HGLOBAL)m_hImage);
+	GlobalFree(m_hImage);
 }

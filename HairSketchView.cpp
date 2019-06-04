@@ -22,6 +22,18 @@
 IMPLEMENT_DYNCREATE(CHairSketchView, CScrollView)
 
 BEGIN_MESSAGE_MAP(CHairSketchView, CScrollView)
+	ON_WM_LBUTTONDOWN()
+	ON_COMMAND(ID_DYEING_COLOR, &CHairSketchView::OnDyeingColor)
+ON_COMMAND(ID_COLOR_BLACK, &CHairSketchView::OnColorBlack)
+ON_COMMAND(ID_COLOR_BROWN, &CHairSketchView::OnColorBrown)
+ON_COMMAND(ID_COLOR_BRIGHTBROWN, &CHairSketchView::OnColorBrightbrown)
+ON_COMMAND(ID_COLOR_DARKBROWN, &CHairSketchView::OnColorDarkbrown)
+ON_COMMAND(ID_COLOR_DARKGRAY, &CHairSketchView::OnColorDarkgray)
+ON_COMMAND(ID_COLOR_GRAY, &CHairSketchView::OnColorGray)
+ON_COMMAND(ID_COLOR_BRIGHTGRAY, &CHairSketchView::OnColorBrightgray)
+ON_COMMAND(ID_EDIT_COPY, &CHairSketchView::OnEditCopy)
+ON_COMMAND(ID_EDIT_PASTE, &CHairSketchView::OnEditPaste)
+ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, &CHairSketchView::OnUpdateEditPaste)
 END_MESSAGE_MAP()
 
 // CHairSketchView 생성/소멸
@@ -29,18 +41,20 @@ END_MESSAGE_MAP()
 CHairSketchView::CHairSketchView() noexcept
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
-	BmInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
+	bmpInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
 	for (int i = 0; i < 256; i++)
 	{
-		BmInfo->bmiColors[i].rgbRed = BmInfo->bmiColors[i].rgbGreen = BmInfo->bmiColors[i].rgbBlue = i;
-		BmInfo->bmiColors[i].rgbReserved = 0;
+		bmpInfo->bmiColors[i].rgbRed = bmpInfo->bmiColors[i].rgbGreen = bmpInfo->bmiColors[i].rgbBlue = i;
+		bmpInfo->bmiColors[i].rgbReserved = 0;
 	}
-	x = 0; y = 0; r = 0; g = 0; b = 0;
+	x = 0; y = 0;
+	r = 0; g = 0; b = 0;
 }
 
 CHairSketchView::~CHairSketchView()
 {
-	if (BmInfo) delete BmInfo;
+	if (bmpInfo)
+		delete bmpInfo;
 }
 
 BOOL CHairSketchView::PreCreateWindow(CREATESTRUCT& cs)
@@ -55,30 +69,28 @@ BOOL CHairSketchView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CHairSketchView::OnDraw(CDC* pDC)
 {
-	CHairSketchDoc* pDoc = GetDocument();
-	ASSERT_VALID(pDoc);
-	if (!pDoc)
+	CHairSketchDoc* doc = GetDocument();
+	ASSERT_VALID(doc);
+	if (!doc)
 		return;
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
-	height = pDoc->dibHi.biHeight;
-	width = pDoc->dibHi.biWidth;
-	rwsize = WIDTHBYTES(pDoc->dibHi.biBitCount*pDoc->dibHi.biWidth);
-	BmInfo->bmiHeader = pDoc->dibHi;
-
-	SetDIBitsToDevice(pDC->GetSafeHdc(), 0, 0, width, height, 0, 0, 0, height, pDoc->m_InImg, BmInfo, DIB_RGB_COLORS);
+	height = doc->dibHi.biHeight;
+	width = doc->dibHi.biWidth;
+	resize = WIDTHBYTES(doc->dibHi.biBitCount*doc->dibHi.biWidth);
+	bmpInfo->bmiHeader = doc->dibHi;
+	SetDIBitsToDevice(pDC->GetSafeHdc(), 0, 0, width, height, 0, 0, 0, height, doc->m_InImg, bmpInfo, DIB_RGB_COLORS);
 }
 
 void CHairSketchView::OnInitialUpdate()
 {
 	CScrollView::OnInitialUpdate();
 
-	CSize sizeTotal;
 	// TODO: 이 뷰의 전체 크기를 계산합니다.
-	CHairSketchDoc* pDoc = GetDocument();
-	ASSERT_VALID(pDoc);
-	sizeTotal.cx = pDoc->width;
-	sizeTotal.cy = pDoc->height;
+	CHairSketchDoc* doc = GetDocument();
+	CSize sizeTotal;
+	sizeTotal.cx = doc->width;
+	sizeTotal.cy = doc->height;
 	SetScrollSizes(MM_TEXT, sizeTotal);
 }
 
@@ -105,3 +117,128 @@ CHairSketchDoc* CHairSketchView::GetDocument() const // 디버그되지 않은 �
 
 
 // CHairSketchView 메시지 처리기
+
+
+void CHairSketchView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CHairSketchDoc* doc = GetDocument();
+	x = point.x;
+	y = point.y;
+	doc->setXY(x, y);
+	r = doc->getClickedR(x, y);
+	g = doc->getClickedG(x, y);
+	b = doc->getClickedB(x, y);
+	CScrollView::OnLButtonDown(nFlags, point);
+}
+
+
+void CHairSketchView::OnDyeingColor()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->setR(r);
+	doc->setG(g);
+	doc->setB(b);
+	doc->OnDyeingColor();
+	doc->CopyClipboard(doc->m_OutImg, height, width, 24);
+	AfxGetMainWnd()->SendMessage(WM_COMMAND, ID_FILE_NEW);
+}
+
+
+void CHairSketchView::OnColorBlack()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(25, 25, 25);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorDarkbrown()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(53, 0, 0);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBrown()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(64, 32, 32);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBrightbrown()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(74, 37, 0);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorDarkgray()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(47, 47, 47);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorGray()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(63, 63, 63);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+
+void CHairSketchView::OnColorBrightgray()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->quick = true;
+	doc->quickColor = RGB(80, 80, 80);
+	OnDyeingColor();
+	doc->quick = false;
+}
+
+void CHairSketchView::OnEditCopy()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CHairSketchDoc* doc = GetDocument();
+	doc->CopyClipboard(doc->m_InImg, height, width, doc->dibHi.biBitCount);
+}
+
+
+void CHairSketchView::OnEditPaste()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	AfxGetMainWnd()->SendMessage(WM_COMMAND, ID_FILE_NEW);
+}
+
+
+void CHairSketchView::OnUpdateEditPaste(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	pCmdUI->Enable(IsClipboardFormatAvailable(CF_DIB));
+}

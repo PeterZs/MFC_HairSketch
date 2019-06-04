@@ -26,22 +26,24 @@ public:
 	int width;
 	int ImgSize;
 	unsigned char *m_flag;
-	int stk[16777216];
+	int stk[10000000];
 	int sp;
 	int set_rv, set_gv, set_bv, set_x, set_y;
 
-	int get_Rvalue(int x, int y);
-	int get_Gvalue(int x, int y);
-	int get_Bvalue(int x, int y);
-	int abs(int op);
-	void set_R(int rvalue);
-	void set_G(int gvalue);
-	void set_B(int bvalue);
-	void set_xy(int xp, int yp);
-	void FloodFill(int x, int y, int nFillColor, int nSelColor);
-	void set_sp(int n);
-	int push(int n);
-	int pop();
+	int getClickedR(int x, int y);
+	int getClickedG(int x, int y);
+	int getClickedB(int x, int y);
+	int getABS(int num);
+	void setR(int rvalue);
+	void setG(int gvalue);
+	void setB(int bvalue);
+	void setXY(int xp, int yp);
+	void setSP(int n);
+	void sketchArea(int x, int y, int nFillColor, int nSelColor);
+	void CopyClipboard(unsigned char *m_CpyImg, int height, int width, int biBitCount);
+	
+	bool quick;
+	COLORREF quickColor;
 
 // 재정의입니다.
 public:
@@ -73,4 +75,5 @@ protected:
 public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+	afx_msg void OnDyeingColor();
 };

@@ -116,6 +116,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <StackReserveSize>10000000</StackReserveSize>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
